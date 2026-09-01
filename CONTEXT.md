@@ -99,3 +99,23 @@ _Avoid_: Remove Acknowledgement
 **Comparison Campaign**:
 使用同一冻结比较契约、在一组 Host Platforms 上执行并判断 Comparable Results 的实验集合。
 _Avoid_: Unrelated benchmark runs
+
+**Host Harness**:
+在被测 host 上生成 load、执行 Docker Lifecycle、采集时间戳并写入原始结果的受测量约束程序。
+_Avoid_: Coordinator, Analysis tool
+
+**Coordinator**:
+在计时路径之外选择 host、触发 run 和收集 Result Bundles 的编排角色。
+_Avoid_: Host Harness
+
+**Campaign Spec**:
+经过 schema 验证、默认值展开和矩阵解析后，完整描述一次 Comparison Campaign 的不可变规范。
+_Avoid_: User YAML, Runtime flags
+
+**Result Bundle**:
+一个 run 的自包含、可校验结果目录，保存 Campaign Spec、环境 manifest、原始记录、验收结论和派生摘要。
+_Avoid_: Log directory, Summary report
+
+**Derived Artifact**:
+由 Result Bundle 中的原始事实可重复生成的表格、列式数据或图表；它不能替代或修改原始记录。
+_Avoid_: Raw result
