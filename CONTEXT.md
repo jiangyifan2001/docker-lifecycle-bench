@@ -123,3 +123,15 @@ _Avoid_: Log directory, Summary report
 **Derived Artifact**:
 由 Result Bundle 中的原始事实可重复生成的表格、列式数据或图表；它不能替代或修改原始记录。
 _Avoid_: Raw result
+
+**Benchmark Operator**:
+预先获准访问本机 Docker socket、负责启动 benchmark 的可信本地用户；它可以是现有用户或专用账户。
+_Avoid_: Automatically created user, Container user
+
+**Reference Stack**:
+v1 用来产生 Comparable Results 的冻结 Docker、runtime、storage、cgroup 与 security profile。
+_Avoid_: Any Docker installation
+
+**Release Manifest**:
+把 source revision、toolchains、build flags、OCI index、各平台 artifacts 和 schemas 绑定到一个 benchmark release 的校验清单。
+_Avoid_: Environment manifest, Result Bundle
