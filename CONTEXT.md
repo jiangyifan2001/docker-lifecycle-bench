@@ -104,6 +104,10 @@ _Avoid_: Unrelated benchmark runs
 在被测 host 上生成 load、执行 Docker Lifecycle、采集时间戳并写入原始结果的受测量约束程序。
 _Avoid_: Coordinator, Analysis tool
 
+**Harness Client**:
+创建或提交 Campaign Spec、调用 Host Harness 并读取 Result Bundle 的用户入口；它不执行正式计时或负载调度。
+_Avoid_: Host Harness, Timing engine
+
 **Coordinator**:
 在计时路径之外选择 host、触发 run 和收集 Result Bundles 的编排角色。
 _Avoid_: Host Harness
