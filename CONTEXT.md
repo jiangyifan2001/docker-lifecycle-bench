@@ -8,6 +8,10 @@
 包含可执行 workload、测量工具、环境验收、原始结果和分析流程的完整仓库。
 _Avoid_: CPU test, test plan
 
+**System Microbenchmark**:
+使用最小 workload 聚焦 Host Platform 中一条明确系统路径的 benchmark；本项目聚焦 Docker Lifecycle，但仍会跨越多个系统组件。
+_Avoid_: CPU microbenchmark, Application benchmark
+
 **Docker Lifecycle**:
 一个 Docker container 从对象创建、进程启动与就绪、进程退出到容器对象移除的完整生命过程。
 _Avoid_: Sandbox lifecycle, cold start
@@ -71,3 +75,27 @@ _Avoid_: Graceful Teardown
 **Graceful Teardown**:
 允许容器进程接收终止信号并执行应用退出逻辑，然后请求移除容器对象的 teardown profile。
 _Avoid_: Forced Teardown
+
+**Readiness Point**:
+Core probe 执行到预先定义并可观测位置的时刻；它既不是处理器执行的首条用户态指令，也不是通用应用就绪。
+_Avoid_: First user instruction, Application ready
+
+**Instrumented Run**:
+包含 Readiness Point 通知、因而能够计算 start-to-ready latency 的 run。
+_Avoid_: Uninstrumented Run
+
+**Uninstrumented Run**:
+不携带 Readiness Point 通知路径、用于最小 full-cycle latency 和 throughput headline 的 run。
+_Avoid_: Instrumented Run
+
+**Remove Acknowledgement**:
+Docker remove API 成功返回、容器对象逻辑删除请求完成的用户可观察边界；它不表示所有底层存储已经物理回收。
+_Avoid_: Physical removal, Storage Drain
+
+**Storage Drain**:
+测量窗口结束后，延迟的 snapshot cleanup、garbage collection 与资源释放达到验收条件的状态。
+_Avoid_: Remove Acknowledgement
+
+**Comparison Campaign**:
+使用同一冻结比较契约、在一组 Host Platforms 上执行并判断 Comparable Results 的实验集合。
+_Avoid_: Unrelated benchmark runs
