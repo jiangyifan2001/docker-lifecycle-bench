@@ -135,3 +135,19 @@ _Avoid_: Any Docker installation
 **Release Manifest**:
 把 source revision、toolchains、build flags、OCI index、各平台 artifacts 和 schemas 绑定到一个 benchmark release 的校验清单。
 _Avoid_: Environment manifest, Result Bundle
+
+**Run Status**:
+描述一次 run 是成功、被环境阻塞、执行失败、结果无效还是被中断的机器可解析结论。
+_Avoid_: Comparable Result, Process exit code
+
+**Local-NUMA Baseline**:
+将 Host Harness、Docker control plane 与 benchmark containers 放在同一目标 NUMA node，并让关键内存分配保持本地的 headline placement profile。
+_Avoid_: Whole-system profile, Remote-client NUMA Sensitivity
+
+**Remote-client NUMA Sensitivity**:
+把 Host Harness 放在目标 NUMA node 之外，同时保持 Docker control plane 与 benchmark containers 位于目标 node 的 sensitivity profile。
+_Avoid_: Local-NUMA Baseline, Cross-platform headline
+
+**NUMA Penalty**:
+同一 Host Platform 和 benchmark 配置下，Remote-client NUMA Sensitivity 相对 Local-NUMA Baseline 的结果变化。
+_Avoid_: Processor ranking
