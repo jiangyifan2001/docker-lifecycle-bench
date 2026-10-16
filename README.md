@@ -1,15 +1,39 @@
 # Docker Lifecycle Bench
 
-`docker-lifecycle-bench` is a host-platform system microbenchmark for Docker
-container lifecycle latency and throughput. The first implementation milestone
-is deliberately narrow: execute one auditable diagnostic smoke campaign on a
-bare-metal Hygon 7490H host.
+`docker-lifecycle-bench` is a host-platform system microbenchmark for measuring
+Docker container lifecycle latency and throughput. It is designed to compare
+host platforms without treating any processor vendor, family, or model as the
+definition of the benchmark.
 
-The timed path has one implementation. A Go binary (`dlbench`) drives the local
-Docker Engine API, timestamps lifecycle boundaries, receives readiness from a
-minimal static C probe, and writes an immutable result bundle. A thin Python
-wrapper may invoke the same binary, but it does not schedule load or measure
-time.
+The repository is currently at its Phase 0 milestone: one auditable diagnostic
+implementation of a full container lifecycle, validated on a bare-metal
+Linux/amd64 host. The included Hygon 7490H campaign is a first-host example,
+not a restriction on the long-term processor scope.
+
+## What it measures
+
+The implemented `FullLifecycle` scenario measures one complete cycle:
+
+```text
+create -> attach stdout -> start -> probe ready -> SIGKILL -> wait -> remove
+```
+
+Each successful cycle records the following boundaries:
+
+- container create acknowledgement;
+- Docker start API acknowledgement;
+- start-to-ready time reported by a minimal in-container probe;
+- forced teardown and wait completion;
+- remove API acknowledgement; and
+- total acknowledged lifecycle time.
+
+The harness runs both serial latency sampling and a closed-loop capacity sweep.
+Capacity and latency remain separate result groups so that completed cycles per
+second are not confused with an externally offered arrival rate.
+
+## Architecture
+
+The timed path has a single implementation:
 
 ```text
 Python wrapper (optional)
@@ -17,66 +41,177 @@ Python wrapper (optional)
         v
 Go dlbench on the host -- Docker Unix socket --> dockerd/containerd/runc
         ^                                             |
-        |------------- probe READY frame <------------|
+        |------------- binary READY frame <-----------|
         |
-        +--> Result Bundle
+        +--> immutable Result Bundle
 ```
 
-## Phase 0 scope
+- **Go host harness (`dlbench`)**: owns scheduling, Docker API calls, timing,
+  lifecycle cleanup, and result generation.
+- **C probe**: runs as container PID 1, emits one fixed-size READY frame, and
+  waits for teardown.
+- **Python client**: optionally invokes the Go binary as a subprocess. It does
+  not duplicate the timing engine or load generator.
+- **Result Bundle**: preserves normalized input, environment evidence, raw
+  operations, derived summaries, final status, and checksums.
 
-- Linux bare metal and rootful Docker
-- native `linux/amd64` execution on the Hygon host
-- instrumented `FullLifecycle` only:
-  `create -> start -> ready -> SIGKILL -> wait -> remove`
-- serial latency samples
-- a small closed-loop capacity sweep
-- diagnostic results only; no cross-platform ranking
+The harness runs directly on the measured host. It is not run inside a
+Docker-in-Docker container.
 
-`CreateRemove`, `ReusedStartExit`, offered-load experiments, formal NUMA
-sensitivity, and publishable p99.9 statistics are intentionally deferred.
+## Current scope
 
-## Build
+Phase 0 intentionally supports a narrow, diagnosable path:
 
-Go 1.24 or newer is required. Build the host binary on Linux or cross-compile it
-from macOS:
+- bare-metal Linux;
+- rootful Docker with cgroup v2;
+- native `linux/amd64` execution with no QEMU or ISA emulation;
+- the instrumented `FullLifecycle` scenario;
+- serial latency sampling;
+- closed-loop capacity points; and
+- diagnostic results only.
+
+The design is processor-platform neutral. Support for additional native ISAs,
+cloud environments, formal Local-NUMA and Remote-client NUMA profiles,
+offered-load tests, additional lifecycle scenarios, and publishable p99.9
+statistics is planned but is not implemented in Phase 0.
+
+## Requirements
+
+To build the project:
+
+- Go 1.24 or newer;
+- a C-capable Docker build environment for the probe image; and
+- Python 3.10 or newer only if the optional wrapper is used.
+
+To run a Phase 0 campaign:
+
+- an otherwise idle bare-metal Linux host;
+- a native `linux/amd64` `dlbench` binary and probe image;
+- rootful Docker;
+- cgroup v2; and
+- a trusted operator with access to the local Docker Unix socket.
+
+Membership in the `docker` group is effectively root-equivalent. Provision
+Docker access as an explicit host-administration step; the benchmark does not
+install packages, invoke `sudo`, create users, or modify group membership.
+
+## Build and test
 
 ```sh
+git clone https://github.com/jiangyifan2001/docker-lifecycle-test.git
+cd docker-lifecycle-test
+
 make test
-GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -o dist/linux-amd64/dlbench ./cmd/dlbench
-docker buildx build --platform linux/amd64 --load -t dlbench-probe:smoke probe
+make test-python
+make build
+make probe-image
 ```
 
-The probe image may be built under emulation on the development Mac, but it
-must run natively on the benchmark host. QEMU/emulation is never allowed during
-a measured run.
-
-## First Hygon smoke run
-
-The benchmark operator must already have access to the local Docker socket.
-`dlbench` never creates users, changes group membership, invokes `sudo`, installs
-packages, prunes Docker globally, or changes host tuning.
+The equivalent native Go build is:
 
 ```sh
-dlbench doctor
-dlbench validate --spec examples/hygon-7490h-smoke.yaml
-dlbench run --spec examples/hygon-7490h-smoke.yaml
+go build -trimpath -o bin/dlbench ./cmd/dlbench
 ```
 
-The result directory contains the normalized campaign, environment evidence,
-one NDJSON record per attempted cycle, a summary, final run status, and SHA-256
-checksums. Failed cycles remain in the raw result.
+To cross-compile only the host harness from macOS:
 
-To create a single transfer bundle on the development Mac, start Docker
-Desktop/BuildKit and run:
+```sh
+GOOS=linux GOARCH=amd64 CGO_ENABLED=0 \
+  go build -trimpath -o dist/linux-amd64/dlbench ./cmd/dlbench
+```
+
+The probe image must execute natively on the benchmark host. Emulation is not
+allowed in a measured run.
+
+## Run the diagnostic campaign
+
+Build or load the probe image before starting the campaign, then run:
+
+```sh
+./bin/dlbench doctor
+./bin/dlbench validate --spec examples/hygon-7490h-smoke.yaml
+./bin/dlbench run --spec examples/hygon-7490h-smoke.yaml
+```
+
+`doctor` checks the operating system, native architecture, bare-metal status,
+cgroup version, Docker access, rootful mode, and available NUMA evidence. A
+required failure blocks the run instead of silently weakening the experiment.
+
+The example campaign leaves `cpusetCpus` and `cpusetMems` empty. It is therefore
+a topology-recorded smoke test, not a Local-NUMA headline result.
+
+## Campaign configuration
+
+Campaigns use the versioned `dlbench.io/v1alpha1` YAML interface. The Phase 0
+schema is available at [`schema/campaign-v1alpha1.json`](schema/campaign-v1alpha1.json).
+The main controls are:
+
+- probe image reference;
+- output directory;
+- container CPU and NUMA memory placement;
+- minimum warm-up cycles and duration;
+- serial measurement sample count and timeout; and
+- capacity worker counts and duration per point.
+
+Warm-up ends only after both its minimum cycle count and minimum duration have
+been satisfied.
+
+## Result Bundle
+
+Every attempted run creates a new result directory, including blocked and
+failed runs. A completed bundle contains:
+
+```text
+campaign.normalized.json  Expanded campaign input
+environment.json          Host, Docker, cgroup, CPU, and NUMA evidence
+manifest.json             Harness version and build identity
+operations.ndjson         One raw record per attempted lifecycle
+summary.json              Derived latency and capacity statistics
+status.json               SUCCESS, BLOCKED, RUN_FAILED, or INTERRUPTED
+checksums.sha256           Bundle integrity checksums
+```
+
+Preserve the whole directory. `summary.json` is derived data and does not
+replace `operations.ndjson` or the environment evidence.
+
+Smoke results are diagnostic. They must not be used for cross-platform ranking
+unless the compared hosts satisfy the same frozen environment, workload,
+placement, and artifact contract.
+
+## Optional Python client
+
+The Python package is intentionally thin:
+
+```sh
+python3 -m pip install -e ./python
+dlbench-client --binary ./bin/dlbench validate \
+  --spec examples/hygon-7490h-smoke.yaml
+```
+
+It delegates validation and execution to the canonical Go binary.
+
+## Transfer to a benchmark host
+
+With Docker Desktop or another BuildKit environment running on the development
+machine, create a Linux/amd64 transfer bundle with:
 
 ```sh
 GO=/path/to/go VERSION=0.1.0-dev ./scripts/build-hygon-bundle.sh
 ```
 
-The script cross-compiles `dlbench`, builds a `linux/amd64` Docker image archive,
-copies the campaign and schema, writes checksums, and creates one
-`dist/dlbench-<version>-linux-amd64-<commit>.tar.gz`. Follow the bundled
-`RUN.md` on liuhui.
+The generated archive contains the host binary, probe image, campaign,
+schema, run instructions, and SHA-256 checksums. Follow
+[`docs/liuhui-runbook.md`](docs/liuhui-runbook.md) for the current first-host
+workflow.
 
-The historical design documents remain unchanged for backup and review. The
-accepted decisions in `docs/adr/` are the current design record.
+## Design documentation
+
+- [`CONTEXT.md`](CONTEXT.md) defines the benchmark's domain language.
+- [`docs/adr/`](docs/adr/) records accepted architecture decisions.
+- [`docker-lifecycle-test-plan.md`](docker-lifecycle-test-plan.md) and
+  [`docker-lifecycle-test-setup.md`](docker-lifecycle-test-setup.md) are the
+  preserved design documents that preceded the executable implementation.
+
+Generated binaries, transfer archives, and Result Bundles belong under ignored
+directories such as `dist/` or `results/`; they are not source-controlled by
+default.
