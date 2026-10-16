@@ -1,0 +1,26 @@
+apiVersion: dlbench.io/v1alpha1
+kind: Campaign
+metadata:
+  name: hygon-7490h-smoke
+classification: diagnostic
+scenario: full-lifecycle
+image: dlbench-probe:smoke
+outputDir: results
+container:
+  networkMode: none
+  # Fill these after inspecting `lscpu -e` and `numactl --hardware`.
+  # Leaving them empty makes this a topology-recorded smoke run, not a
+  # Local-NUMA headline result.
+  cpusetCpus: ""
+  cpusetMems: ""
+warmup:
+  minCycles: 100
+  minDuration: 30s
+measurement:
+  samples: 1000
+  cycleTimeout: 30s
+capacity:
+  enabled: true
+  workers: [1, 2, 4, 8]
+  durationPerPoint: 30s
+

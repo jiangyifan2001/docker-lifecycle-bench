@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dlbench.io/schema/campaign-v1alpha1.json",
+  "title": "Docker Lifecycle Bench Phase 0 Campaign",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "metadata", "image"],
+  "properties": {
+    "apiVersion": {"const": "dlbench.io/v1alpha1"},
+    "kind": {"const": "Campaign"},
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$"
+        }
+      }
+    },
+    "classification": {"enum": ["diagnostic"]},
+    "scenario": {"enum": ["full-lifecycle"]},
+    "image": {"type": "string", "minLength": 1},
+    "outputDir": {"type": "string", "minLength": 1},
+    "container": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "networkMode": {"const": "none"},
+        "cpusetCpus": {"type": "string"},
+        "cpusetMems": {"type": "string"}
+      }
+    },
+    "warmup": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "minCycles": {"type": "integer", "minimum": 1},
+        "minDuration": {"type": "string", "pattern": "^[0-9]+(ns|us|µs|ms|s|m|h)$"}
+      }
+    },
+    "measurement": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "samples": {"type": "integer", "minimum": 1},
+        "cycleTimeout": {"type": "string", "pattern": "^[0-9]+(ns|us|µs|ms|s|m|h)$"}
+      }
+    },
+    "capacity": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "workers": {
+          "type": "array",
+          "items": {"type": "integer", "minimum": 1},
+          "uniqueItems": true
+        },
+        "durationPerPoint": {"type": "string", "pattern": "^[0-9]+(ns|us|µs|ms|s|m|h)$"}
+      }
+    }
+  }
+}
+

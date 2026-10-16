@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "docker-lifecycle-bench"
+version = "0.1.0"
+description = "Thin client for the canonical dlbench Go binary"
+requires-python = ">=3.10"
+
+[project.scripts]
+dlbench-client = "dlbench_client.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+

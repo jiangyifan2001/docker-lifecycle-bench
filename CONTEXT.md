@@ -151,3 +151,17 @@ _Avoid_: Local-NUMA Baseline, Cross-platform headline
 **NUMA Penalty**:
 同一 Host Platform 和 benchmark 配置下，Remote-client NUMA Sensitivity 相对 Local-NUMA Baseline 的结果变化。
 _Avoid_: Processor ranking
+
+## Phase 0 implementation
+
+首个可执行里程碑是在 Hygon 7490H bare-metal host 上完成一次 Diagnostic
+Smoke Run。它只实现 `FullLifecycle`，不产生跨平台 Comparable Result。
+
+- Go binary `dlbench` 是唯一 Host Harness、计时引擎和负载调度器。
+- Python package `dlbench_client` 是薄 wrapper，通过 subprocess 调用
+  `dlbench`；它不实现正式计时或调度。
+- 静态 C/musl probe 作为 container PID 1，写出一个 binary READY frame 后
+  阻塞等待 teardown。
+- Phase 0 使用 `CreateRemove`、`ReusedStartExit` 和 `FullLifecycle` 名称，避免
+  将旧称 L1/L2/L3 与处理器 cache levels 混淆。
+- Phase 0 结果固定分类为 Diagnostic，并明确省略不受样本量支持的 p99.9。
