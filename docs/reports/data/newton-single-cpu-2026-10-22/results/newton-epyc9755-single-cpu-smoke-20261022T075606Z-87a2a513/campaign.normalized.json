@@ -1,0 +1,38 @@
+{
+  "apiVersion": "dlbench.io/v1alpha1",
+  "kind": "Campaign",
+  "metadata": {
+    "name": "newton-epyc9755-single-cpu-smoke"
+  },
+  "classification": "diagnostic",
+  "scenario": "full-lifecycle",
+  "image": "sha256:53c0b9d5ec8d5aed43fee5b15258370c25de43e4764050b7f57e144ae713f499",
+  "outputDir": "/home/higon/yifan/docker-lifecycle-bench/dist/newton-single-cpu-20261022/results",
+  "container": {
+    "networkMode": "none",
+    "cpusetCpus": "16",
+    "cpusetMems": "",
+    "cgroupParent": "dlbench.slice"
+  },
+  "placement": {
+    "singleCpu": 16
+  },
+  "warmup": {
+    "minCycles": 100,
+    "minDuration": "30s"
+  },
+  "measurement": {
+    "samples": 1000,
+    "cycleTimeout": "30s"
+  },
+  "capacity": {
+    "enabled": true,
+    "workers": [
+      1,
+      2,
+      4,
+      8
+    ],
+    "durationPerPoint": "30s"
+  }
+}

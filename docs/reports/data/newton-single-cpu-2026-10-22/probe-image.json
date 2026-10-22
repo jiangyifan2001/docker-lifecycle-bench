@@ -1,0 +1,34 @@
+[
+    {
+        "Id": "sha256:53c0b9d5ec8d5aed43fee5b15258370c25de43e4764050b7f57e144ae713f499",
+        "RepoTags": [],
+        "RepoDigests": [],
+        "Comment": "Imported from -",
+        "Created": "2026-10-16T04:54:34.217847907Z",
+        "Config": {
+            "Entrypoint": [
+                "/dlbench-probe"
+            ]
+        },
+        "Architecture": "amd64",
+        "Os": "linux",
+        "Size": 815568,
+        "GraphDriver": {
+            "Data": {
+                "MergedDir": "/data/docker/overlay2/16673fb1ad1c0697bc56a6b2c78ff32354b02a1d4b6edede5de9758843f0f26c/merged",
+                "UpperDir": "/data/docker/overlay2/16673fb1ad1c0697bc56a6b2c78ff32354b02a1d4b6edede5de9758843f0f26c/diff",
+                "WorkDir": "/data/docker/overlay2/16673fb1ad1c0697bc56a6b2c78ff32354b02a1d4b6edede5de9758843f0f26c/work"
+            },
+            "Name": "overlay2"
+        },
+        "RootFS": {
+            "Type": "layers",
+            "Layers": [
+                "sha256:d4b391a127c9935bddcfee8f6fbaae6e355bcf67010ad477cec0b4e7b81be007"
+            ]
+        },
+        "Metadata": {
+            "LastTagTime": "0001-01-01T00:00:00Z"
+        }
+    }
+]

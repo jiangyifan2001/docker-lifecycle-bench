@@ -1,0 +1,115 @@
+{
+  "validated": true,
+  "runId": "newton-epyc9755-single-cpu-smoke-20261022T075606Z-87a2a513",
+  "checksummedFiles": 8,
+  "totalCycles": 1347,
+  "groups": [
+    {
+      "phase": "warmup",
+      "workers": 1,
+      "cycles": 100,
+      "seconds": 60.350993505,
+      "cyclesPerSecond": 1.6569735507620953,
+      "e2eMeanMs": 603.45970915,
+      "p50Ms": 600.888032,
+      "p95Ms": 655.249506,
+      "p99Ms": 664.709111
+    },
+    {
+      "phase": "latency",
+      "workers": 1,
+      "cycles": 1000,
+      "seconds": 617.458647648,
+      "cyclesPerSecond": 1.6195416548284844,
+      "e2eMeanMs": 617.409913579,
+      "p50Ms": 613.979898,
+      "p95Ms": 664.407495,
+      "p99Ms": 696.802283
+    },
+    {
+      "phase": "capacity",
+      "workers": 1,
+      "cycles": 50,
+      "seconds": 30.514304565,
+      "cyclesPerSecond": 1.6385757667684209,
+      "e2eMeanMs": 610.23776724,
+      "p50Ms": 613.436175,
+      "p95Ms": 655.17293,
+      "p99Ms": 680.279662
+    },
+    {
+      "phase": "capacity",
+      "workers": 2,
+      "cycles": 49,
+      "seconds": 30.627239572,
+      "cyclesPerSecond": 1.5998830023452955,
+      "e2eMeanMs": 1237.6802296122448,
+      "p50Ms": 1241.103351,
+      "p95Ms": 1400.519768,
+      "p99Ms": 1432.181095
+    },
+    {
+      "phase": "capacity",
+      "workers": 4,
+      "cycles": 67,
+      "seconds": 31.044263164,
+      "cyclesPerSecond": 2.1582087371845087,
+      "e2eMeanMs": 1833.7622394179105,
+      "p50Ms": 1832.894427,
+      "p95Ms": 2036.910424,
+      "p99Ms": 2190.034032
+    },
+    {
+      "phase": "capacity",
+      "workers": 8,
+      "cycles": 81,
+      "seconds": 31.860703053,
+      "cyclesPerSecond": 2.542316780180814,
+      "e2eMeanMs": 3093.4011576666667,
+      "p50Ms": 3161.467591,
+      "p95Ms": 3851.832945,
+      "p99Ms": 4212.568546
+    }
+  ],
+  "placement": {
+    "cpu": 16,
+    "beforeAndAfterPassed": true,
+    "processes": [
+      {
+        "role": "harness",
+        "pid": 17683,
+        "threads": 6,
+        "effectiveCpus": "0-511",
+        "effectiveMems": "0-7"
+      },
+      {
+        "role": "containerd",
+        "pid": 15432,
+        "threads": 35,
+        "effectiveCpus": "16",
+        "effectiveMems": "0-7"
+      },
+      {
+        "role": "dockerd",
+        "pid": 15481,
+        "threads": 64,
+        "effectiveCpus": "16",
+        "effectiveMems": "0-7"
+      },
+      {
+        "role": "probe",
+        "pid": 17871,
+        "threads": 1,
+        "effectiveCpus": "16",
+        "effectiveMems": "0-7"
+      },
+      {
+        "role": "shim",
+        "pid": 17849,
+        "threads": 10,
+        "effectiveCpus": "16",
+        "effectiveMems": "0-7"
+      }
+    ]
+  }
+}

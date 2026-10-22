@@ -1,0 +1,18 @@
+2026-10-22T15:56:06+08:00
+Linux Newton 5.15.0-187-generic #197-Ubuntu SMP Fri Jul 17 19:17:01 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+systemd 249 (249.11-0ubuntu3.23)
++PAM +AUDIT +SELINUX +APPARMOR +IMA +SMACK +SECCOMP +GCRYPT +GNUTLS +OPENSSL +ACL +BLKID +CURL +ELFUTILS +FIDO2 +IDN2 -IDN +IPTC +KMOD +LIBCRYPTSETUP +LIBFDISK +PCRE2 -PWQUALITY -P11KIT -QRENCODE +BZIP2 +LZ4 +XZ +ZLIB +ZSTD -XKBCOMMON +UTMP +SYSVINIT default-hierarchy=unified
+ 15:56:06 up  1:46,  5 users,  load average: 15.92, 7.05, 2.73
+Filesystem                         Size  Used Avail Use% Mounted on
+/dev/mapper/ubuntu--vg-ubuntu--lv  2.3T  2.1T   50G  98% /
+/dev/sdb2                          3.6T  3.0T  460G  87% /data
+thread_siblings_list: 16,272
+physical_package_id: 0
+core_id: 64
+scaling_driver: acpi-cpufreq
+scaling_governor: userspace
+scaling_cur_freq: 1809739
+scaling_min_freq: 2100000
+scaling_max_freq: 2100000
+scaling_setspeed: 2100000
+SMT active: 1

@@ -1,0 +1,7 @@
+{
+  "toolVersion": "0.1.0-single-cpu",
+  "commit": "d740ea0811a39683341aa603a74eb3414c2f400d",
+  "goos": "linux",
+  "goarch": "amd64",
+  "goVersion": "go1.27.2"
+}

@@ -1,0 +1,130 @@
+{
+  "classification": "diagnostic",
+  "scenario": "full-lifecycle",
+  "groups": [
+    {
+      "phase": "capacity",
+      "concurrency": 1,
+      "attempts": 50,
+      "successes": 50,
+      "errors": 0,
+      "errorRate": 0,
+      "observedSeconds": 30.514304565,
+      "completedCyclesPerSecond": 1.6385757667684209,
+      "cycleAckNs": {
+        "p50": 613436175,
+        "p95": 655172930,
+        "p99": 680279662
+      },
+      "startToReadyNs": {
+        "p50": 192701954,
+        "p95": 220365878,
+        "p99": 254331725
+      }
+    },
+    {
+      "phase": "capacity",
+      "concurrency": 2,
+      "attempts": 49,
+      "successes": 49,
+      "errors": 0,
+      "errorRate": 0,
+      "observedSeconds": 30.627239572,
+      "completedCyclesPerSecond": 1.5998830023452955,
+      "cycleAckNs": {
+        "p50": 1241103351,
+        "p95": 1400519768,
+        "p99": 1432181095
+      },
+      "startToReadyNs": {
+        "p50": 327365054,
+        "p95": 407590988,
+        "p99": 456266891
+      }
+    },
+    {
+      "phase": "capacity",
+      "concurrency": 4,
+      "attempts": 67,
+      "successes": 67,
+      "errors": 0,
+      "errorRate": 0,
+      "observedSeconds": 31.044263164,
+      "completedCyclesPerSecond": 2.1582087371845087,
+      "cycleAckNs": {
+        "p50": 1832894427,
+        "p95": 2036910424,
+        "p99": 2190034032
+      },
+      "startToReadyNs": {
+        "p50": 570457349,
+        "p95": 737499133,
+        "p99": 1066617623
+      }
+    },
+    {
+      "phase": "capacity",
+      "concurrency": 8,
+      "attempts": 81,
+      "successes": 81,
+      "errors": 0,
+      "errorRate": 0,
+      "observedSeconds": 31.860703053,
+      "completedCyclesPerSecond": 2.542316780180814,
+      "cycleAckNs": {
+        "p50": 3161467591,
+        "p95": 3851832945,
+        "p99": 4212568546
+      },
+      "startToReadyNs": {
+        "p50": 1328806677,
+        "p95": 1955723417,
+        "p99": 2344542506
+      }
+    },
+    {
+      "phase": "latency",
+      "concurrency": 1,
+      "attempts": 1000,
+      "successes": 1000,
+      "errors": 0,
+      "errorRate": 0,
+      "observedSeconds": 617.458647648,
+      "completedCyclesPerSecond": 1.6195416548284844,
+      "cycleAckNs": {
+        "p50": 613979898,
+        "p95": 664407495,
+        "p99": 696802283
+      },
+      "startToReadyNs": {
+        "p50": 196457552,
+        "p95": 240787964,
+        "p99": 258516872
+      }
+    },
+    {
+      "phase": "warmup",
+      "concurrency": 1,
+      "attempts": 100,
+      "successes": 100,
+      "errors": 0,
+      "errorRate": 0,
+      "observedSeconds": 60.350993505,
+      "completedCyclesPerSecond": 1.6569735507620953,
+      "cycleAckNs": {
+        "p50": 600888032,
+        "p95": 655249506,
+        "p99": 664709111
+      },
+      "startToReadyNs": {
+        "p50": 188581864,
+        "p95": 243139705,
+        "p99": 251131158
+      }
+    }
+  ],
+  "caveats": [
+    "Phase 0 smoke result; not valid for cross-platform ranking.",
+    "p99.9 is intentionally omitted because the smoke sample count is insufficient."
+  ]
+}

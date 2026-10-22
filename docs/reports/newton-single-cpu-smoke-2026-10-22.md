@@ -1,0 +1,160 @@
+# Newton AMD EPYC 9755 单逻辑 CPU 实验报告
+
+2026-10-22，北京时间 **15:56:07–16:09:29**，在 Newton 上完成一次 CPU 16 单逻辑 CPU smoke。结果为 **SUCCESS，1,347 个完整生命周期全部成功**，包括 100 次 warm-up、1,000 次 serial、247 次 concurrent。主结果排除 warm-up，共 1,247 个 cycles。
+
+Serial E2E mean 为 **617.41 ms**，p99 为 **696.80 ms**。Concurrent 从 1 增至 8 workers，吞吐量从 **1.64 增至 2.54 cycles/s**，E2E mean 从 **610.24 增至 3,093.40 ms**。本次验证了现有 benchmark 在这台 AMD 裸机上的单逻辑 CPU 执行路径；不是 AMD 与 Hygon 的 CPU 性能排名，也不代表所有 AMD 软件环境均已验证。
+
+## 测量配置与环境
+
+| Item | Observed configuration |
+|---|---|
+| Source | `d740ea0811a39683341aa603a74eb3414c2f400d`，`feat: single core support`，干净工作区 |
+| Remote repository | `/home/higon/yifan/docker-lifecycle-bench` |
+| CPU | 2 × AMD EPYC 9755，128 cores/socket，256 physical cores，512 online logical CPUs |
+| Topology | 8 NUMA nodes；CPU 16 位于 socket 0、core 64、NUMA node 0；SMT sibling 为 CPU 272 |
+| CPU frequency policy | `acpi-cpufreq` / `userspace`；min、max、setspeed 均为 2,100,000 kHz；运行前 `scaling_cur_freq` 快照为 1,809,739 kHz |
+| OS and kernel | Ubuntu 22.04.5 LTS，Linux `5.15.0-187-generic`；bare metal |
+| Container stack | Docker 29.1.3，containerd 2.2.1，runc 1.3.3；rootful，cgroup v2，systemd driver |
+| Storage | `overlay2`，Docker root `/data/docker`，backing filesystem `extfs`；所在 `/data` 文件系统运行前剩余约 460 GiB |
+| Harness build | Go 1.27.2，`linux/amd64`，`GOAMD64=v1`，`CGO_ENABLED=0`；macOS 交叉编译，Newton 原生执行 |
+| Probe | 从 liuhui 导出再导入的同一 probe 内容；未重新构建 |
+| Workload | Instrumented FullLifecycle，forced teardown；network `none`；serial + closed-loop concurrent |
+| Memory placement | 未指定 `cpusetMems`；effective memory nodes 为 `0-7`，不是 NUMA-local 内存实验 |
+
+频率表记录的是系统策略与单次快照，不表示全程实测频率恒定为 2.1 GHz。测试没有修改频率、SMT、NUMA 内存策略、存储配置或系统服务的持久配置。
+
+执行前 Docker 无运行中容器，containerd 的 `moby` namespace 无任务；保留了 25 个原有停止状态容器。主机不是独占环境：运行前记录的 load average 为 `15.92, 7.05, 2.73`，不能将预检时的空闲状态视为全程无背景干扰。环境依据见 [environment.json][environment] 和 [host.before.txt][host-before]。
+
+Newton 原有 Go 为 1.23.8，工具链自动下载超时，因此未安装或替换系统 Go，而是执行同一提交交叉编译出的 Linux 二进制。其 SHA-256 为：
+
+```text
+69875acdb2f83c320523b6f2e8017198a8cad417bd5e8a183e6c15ce43d62ab3
+```
+
+Newton 使用的 image ID 为 `sha256:53c0b9d5ec8d5aed43fee5b15258370c25de43e4764050b7f57e144ae713f499`，liuhui 导出源的 ID 为 `sha256:36810f1cb22b0d86c5200c1a871551c7e8aedf054d50db1cf7a4f5ed07c66c4f`。虽然两端 ID 不同，导入后逐项核对的 `Created`、`Architecture`、`Os`、`RootFS`、`Config` 全部一致；rootfs layer 为 `sha256:d4b391a127c9935bddcfee8f6fbaae6e355bcf67010ad477cec0b4e7b81be007`。核对结果保存在 [analysis.json][analysis]，原始 inspect 文件随报告附带。
+
+## 执行顺序与单核约束
+
+执行顺序为：Linux 测试与环境检查 → 保存恢复状态 → 设置服务 CPU 范围 → 实际 canary 验证 → warm-up → serial → concurrent 1/2/4/8 → 绑核后检 → 恢复服务 → 独立复算与清理检查。另有 1 个不计时 canary，不纳入 cycles 或吞吐量统计。
+
+每轮生命周期为 `create → attach stdout → start → probe READY → SIGKILL → wait → remove`。E2E 对应 `cycleAckNs`，从本轮 create 前开始计时，到 remove API 返回结束；不包含整个 campaign 的准备和恢复时间。
+
+| Object | Preflight threads | Constraint and evidence |
+|---|---:|---|
+| Go harness | 6 | 所查线程均允许 CPU 16；`GOMAXPROCS=1` |
+| dockerd | 64 | effective cgroup CPU 16，所查线程均允许 CPU 16 |
+| containerd | 35 | effective cgroup CPU 16，所查线程均允许 CPU 16 |
+| Canary shim | 10 | 实际 probe 父进程为 `containerd-shim-runc-v2`，cgroup 与线程均限制 CPU 16 |
+| Canary probe | 1 | 实际 host PID 对应本次容器，cgroup 与线程均限制 CPU 16 |
+
+正式容器与 canary 使用同一配置生成逻辑：`CpusetCpus=16`、`CgroupParent=dlbench.slice`、runtime `runc`。前后检查通过，daemon PID 与 CPU/memory 范围未在两次检查之间发生可见变化。[绑定证据][before]、[后检证据][after]及[独立核验][verification]均随报告保存。
+
+Harness 的父 cgroup 仍允许 `0-511`，但它通过逐线程 affinity 约束为 CPU 16；两者并不矛盾。这里的 8 workers 是 8 个并发 Go goroutines，**不是 8 个 CPU，也不是承诺恰好 8 个 OS threads**。
+
+这是单逻辑 CPU affinity，不是独占物理核。SMT sibling 272 仍在线；IRQ、系统后台工作及部分内核工作未隔离。短命 runc 依靠 cgroup 继承约束，没有逐次调度追踪；前后快照也不能排除中途改动后又恢复的情况。
+
+## Latency 与 throughput 结果
+
+Warm-up 配置为至少 100 次且至少 30 秒，实际为 **100 次、60.351 秒**。下表排除 warm-up。Serial 与 Concurrent-1 为独立采样阶段。
+
+| Test phase | Workers | # of cycles | E2E mean (ms) | E2E p50 (ms) | E2E p95 (ms) | E2E p99 (ms) | Cycles/s |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Serial latency | 1 | 1,000 | 617.41 | 613.98 | 664.41 | 696.80 | 1.62 |
+| Concurrent | 1 | 50 | 610.24 | 613.44 | 655.17 | 680.28 | 1.64 |
+| Concurrent | 2 | 49 | 1,237.68 | 1,241.10 | 1,400.52 | 1,432.18 | 1.60 |
+| Concurrent | 4 | 67 | 1,833.76 | 1,832.89 | 2,036.91 | 2,190.03 | 2.16 |
+| Concurrent | 8 | 81 | 3,093.40 | 3,161.47 | 3,851.83 | 4,212.57 | 2.54 |
+
+Serial 观测窗口为 617.459 秒；concurrent 各点为 30.514、30.627、31.044、31.861 秒。Concurrent 的发起窗口是 30 秒，截止后等待在途 cycles 结束。吞吐量以成功次数除以实际观测窗口计算，不直接除以配置中的 30 秒。
+
+Mean 是逐条 E2E 的算术平均；分位数使用 nearest-rank。**本次每个 concurrent 点都少于 100 个 cycles，其 p99 恰好等于该点最大观测值**，不应当作稳定的总体尾延迟估计。一次 smoke 也不证明 warm-up 后已统计收敛。
+
+### Serial 分阶段 latency
+
+以下均来自同一组 1,000 个 serial cycles，单位 ms。
+
+| Metric | Mean | p50 | p95 | p99 |
+|---|---:|---:|---:|---:|
+| createNs | 210.63 | 210.61 | 232.90 | 245.95 |
+| startApiNs | 228.87 | 225.16 | 266.17 | 284.46 |
+| startToReadyNs | 200.22 | 196.46 | 240.79 | 258.52 |
+| readyObservedNs | 228.87 | 225.17 | 266.17 | 284.47 |
+| killApiNs | 115.27 | 111.56 | 141.01 | 169.75 |
+| destroyAckNs | 115.28 | 111.58 | 141.01 | 169.75 |
+| removeAckNs | 61.81 | 61.52 | 71.75 | 78.57 |
+| cycleAckNs / E2E | 617.41 | 613.98 | 664.41 | 696.80 |
+
+这些指标存在重叠，不能逐行相加得到 E2E，也不能将各阶段 p99 相加。Attach 没有独立计时字段，但包含在 E2E 内；Remove 的结束边界是 API acknowledgement，不等于物理资源彻底回收。
+
+## 结果解释与比较边界
+
+`mpstat` 每秒采样 CPU 16 和 sibling 272，采集进程绑定 CPU 0。下表只平均完整落在各阶段内的一秒区间；active 为 user、nice、system、irq、softirq 之和，不包括 iowait。
+
+| Phase | Workers | CPU 16 active | CPU 16 iowait | CPU 16 idle | Interpretation |
+|---|---:|---:|---:|---:|---|
+| Serial | 1 | 18.46% | 23.39% | 58.16% | CPU 非持续计算饱和 |
+| Concurrent | 1 | 18.10% | 22.64% | 59.26% | 与 serial 的利用率形态接近 |
+| Concurrent | 2 | 18.35% | 50.37% | 31.28% | 吞吐量没有增长，等待占比上升 |
+| Concurrent | 4 | 24.48% | 66.76% | 8.75% | 增加并发伴随更多 I/O wait |
+| Concurrent | 8 | 28.80% | 71.20% | 0.00% | idle 为零不代表算力已用满 |
+
+Sibling 272 在各正式阶段的平均 active 均低于 0.04%。这是监测期内轻负载的证据，不是物理核独占保证。原始监控见 [mpstat.log][mpstat]，分组计算见 [analysis.json][analysis]。
+
+**性能分类：等待因素显著的端到端生命周期路径，不是已证实的 CPU compute-bound 场景。** I/O wait 是 CPU 时间记账，不是某一 cycle 的等待时间比例，也不能单独定位到某块盘或某个函数。短时 `iostat`、`vmstat` 和进程快照保存在 [triage-during.txt][triage]；本次没有进一步追踪具体等待来源。
+
+liuhui 上次单 CPU serial mean 为 209.93 ms，Concurrent-8 为 5.17 cycles/s；Newton 本次为 617.41 ms 和 2.54 cycles/s。不能据此得出 AMD CPU 比 Hygon CPU 慢：两台机器的 `overlay2`/`overlayfs` 存储路径、内核、磁盘、频率策略及 SMT 状态没有统一，且未绑定 NUMA-local 内存。此前结果见 [liuhui 单 CPU 报告](single-cpu-smoke-2026-10-22.md)。
+
+## 校验与环境恢复
+
+| Check | Result |
+|---|---|
+| Linux 原生测试 | Newton 原生执行 placement 与 dockerengine 测试，全部通过；含新线程 affinity 继承及 canary 失败清理测试 |
+| Python wrapper 与恢复工具测试 | 6 项通过 |
+| 真实生命周期 | 1,347 条成功记录，零错误；sample ID 连续唯一，container ID 唯一，probe PID 均为 1 |
+| 计时与执行顺序 | 8 项计时均为正，相关边界顺序成立，各阶段顺序正确，同一 worker 内无 cycle 重叠 |
+| 独立统计复算 | 各阶段计数、实际窗口、吞吐量、E2E/start-to-ready p50/p95/p99 与 Go summary 一致；另算 mean |
+| 结果包完整性 | 8 个数据文件的 SHA-256 全部通过；Newton、本地副本和提交用副本分别校验通过 |
+| 单 CPU 约束 | 测量前 canary 和测量后检查通过；CPU 16、`GOMAXPROCS=1` |
+| 服务恢复 | dockerd/containerd 的 effective CPUs 及全部被检查线程恢复 `0-511`；PID 15481/15432 不变；无服务重启 |
+| 容器与 slice | 原有 25 个容器的 ID、状态、名称保持不变；没有新增残留容器，运行中容器为 0；`dlbench.slice` 恢复 inactive |
+
+旧内核拒绝清空有任务 cgroup 的 CPU mask，恢复工具因此采用兼容路径：服务的 `AllowedCPUs` 属性恢复为空，内核 `cpuset.cpus` 显式设为 `0-511`。**全部在线 CPU 已重新可用，没有残留单 CPU 限制；但空列表继承模式没有恢复。** 若以后需要 CPU 热添加自动继承或恢复空 mask，应在单独批准的维护窗口处理，本次没有重启服务。详见 [restore.log][restore]、[restoration.json][restoration] 和保留的 [host-state.json][host-state]。
+
+上述检查验证正常执行、统计和恢复路径，不等于完整 benchmark 设计全部实现。当前仍是 instrumented FullLifecycle、forced teardown、closed-loop concurrent 的诊断测试；offered-load、正式 Local/Remote NUMA 比较、长期尾延迟和多轮置信区间不在本次范围内。
+
+## 结果位置与复核
+
+Newton 上的实验目录：
+
+```text
+/home/higon/yifan/docker-lifecycle-bench/dist/newton-single-cpu-20261022/
+```
+
+该目录保留二进制、配置、原始结果、运行日志和恢复状态。测量使用的源代码仍为 `d740ea0`，没有因生成报告而修改。
+
+本报告随 `reports` 分支保存 [完整结果包][bundle]、[独立核验结果][verification]、[分阶段分析][analysis]、恢复证据、监控和测试日志。附带数据不含二进制，也不含原有容器的名称列表。
+
+从仓库根目录可独立复核，不需要 Docker：
+
+```sh
+python3 scripts/verify-result.py \
+  docs/reports/data/newton-single-cpu-2026-10-22/results/newton-epyc9755-single-cpu-smoke-20261022T075606Z-87a2a513
+
+python3 docs/reports/data/newton-single-cpu-2026-10-22/analyze.py \
+  docs/reports/data/newton-single-cpu-2026-10-22
+```
+
+`verify-restoration.py` 是针对原主机的只读恢复审计脚本，需要 Newton 的实时 `/proc`、systemd 状态和实验目录中的原容器清单，不是离线复核工具。复跑测量需重新选择空闲 CPU、保存新的恢复状态并使用新输出目录；不能直接重复使用已经存在的 `host-state.json`。操作步骤见 [single CPU runbook](../single-cpu.md)。
+
+[bundle]: data/newton-single-cpu-2026-10-22/results/newton-epyc9755-single-cpu-smoke-20261022T075606Z-87a2a513/
+[environment]: data/newton-single-cpu-2026-10-22/results/newton-epyc9755-single-cpu-smoke-20261022T075606Z-87a2a513/environment.json
+[before]: data/newton-single-cpu-2026-10-22/results/newton-epyc9755-single-cpu-smoke-20261022T075606Z-87a2a513/placement.before.json
+[after]: data/newton-single-cpu-2026-10-22/results/newton-epyc9755-single-cpu-smoke-20261022T075606Z-87a2a513/placement.after.json
+[verification]: data/newton-single-cpu-2026-10-22/verification.json
+[analysis]: data/newton-single-cpu-2026-10-22/analysis.json
+[restoration]: data/newton-single-cpu-2026-10-22/restoration.json
+[host-before]: data/newton-single-cpu-2026-10-22/host.before.txt
+[host-state]: data/newton-single-cpu-2026-10-22/host-state.json
+[restore]: data/newton-single-cpu-2026-10-22/restore.log
+[mpstat]: data/newton-single-cpu-2026-10-22/mpstat.log
+[triage]: data/newton-single-cpu-2026-10-22/triage-during.txt

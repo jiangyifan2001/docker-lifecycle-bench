@@ -1,0 +1,465 @@
+{
+  "collectedAt": "2026-10-22T08:09:29.102988655Z",
+  "cpu": 16,
+  "passed": true,
+  "dockerPeerPid": 1,
+  "containerParent": "/dlbench.slice",
+  "parentEffectiveCpus": "16",
+  "parentEffectiveMems": "0-7",
+  "processes": [
+    {
+      "role": "harness",
+      "pid": 17683,
+      "parentPid": 16728,
+      "cgroup": "/user.slice/user-1000.slice/session-56.scope",
+      "effectiveCpus": "0-511",
+      "effectiveMems": "0-7",
+      "threads": [
+        {
+          "tid": 17683,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 17819,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 17820,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 17821,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 17822,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 17823,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 17838,
+          "allowedCpus": "16"
+        }
+      ]
+    },
+    {
+      "role": "containerd",
+      "pid": 15432,
+      "parentPid": 1,
+      "cgroup": "/system.slice/containerd.service",
+      "effectiveCpus": "16",
+      "effectiveMems": "0-7",
+      "threads": [
+        {
+          "tid": 15432,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15433,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15434,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15435,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15436,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15437,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15438,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15439,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15440,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15441,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15442,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15443,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15444,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15445,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15446,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15447,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15448,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15449,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15482,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15483,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15484,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15485,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15486,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15487,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15488,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15489,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15490,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 16167,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 16168,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 16169,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 16170,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 16171,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 16172,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 16173,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 16174,
+          "allowedCpus": "16"
+        }
+      ]
+    },
+    {
+      "role": "dockerd",
+      "pid": 15481,
+      "parentPid": 1,
+      "cgroup": "/system.slice/docker.service",
+      "effectiveCpus": "16",
+      "effectiveMems": "0-7",
+      "threads": [
+        {
+          "tid": 15481,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15491,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15492,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15493,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15494,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15495,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15496,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15497,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15498,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15499,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15500,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15501,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15502,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15503,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15504,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15505,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15506,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15507,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15508,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15537,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15538,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15539,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15540,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15541,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15542,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15543,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15544,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15545,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15546,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15547,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15548,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15549,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15550,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15551,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15554,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15556,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15557,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15558,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15559,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15560,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15561,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15562,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15563,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15565,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15722,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15723,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15725,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15726,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15727,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15728,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15729,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15730,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15731,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15732,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 15734,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 16069,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 16070,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 16071,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 16072,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 16073,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 16074,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 16075,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 16076,
+          "allowedCpus": "16"
+        },
+        {
+          "tid": 16685,
+          "allowedCpus": "16"
+        }
+      ]
+    }
+  ]
+}

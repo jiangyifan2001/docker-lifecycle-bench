@@ -1,0 +1,17 @@
+=== RUN   TestContainerConfigPreservesDefaultAndPinsWholeProfile
+--- PASS: TestContainerConfigPreservesDefaultAndPinsWholeProfile (0.00s)
+=== RUN   TestPlacementCanaryCleanupAndFailure
+=== RUN   TestPlacementCanaryCleanupAndFailure/pass
+=== RUN   TestPlacementCanaryCleanupAndFailure/verify-fails
+=== RUN   TestPlacementCanaryCleanupAndFailure/cancel
+=== RUN   TestPlacementCanaryCleanupAndFailure/wrong-host-config
+=== RUN   TestPlacementCanaryCleanupAndFailure/wrong-owner
+=== RUN   TestPlacementCanaryCleanupAndFailure/remove-fails
+--- PASS: TestPlacementCanaryCleanupAndFailure (0.01s)
+    --- PASS: TestPlacementCanaryCleanupAndFailure/pass (0.00s)
+    --- PASS: TestPlacementCanaryCleanupAndFailure/verify-fails (0.00s)
+    --- PASS: TestPlacementCanaryCleanupAndFailure/cancel (0.00s)
+    --- PASS: TestPlacementCanaryCleanupAndFailure/wrong-host-config (0.00s)
+    --- PASS: TestPlacementCanaryCleanupAndFailure/wrong-owner (0.00s)
+    --- PASS: TestPlacementCanaryCleanupAndFailure/remove-fails (0.00s)
+PASS

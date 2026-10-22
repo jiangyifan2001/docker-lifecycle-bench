@@ -1,0 +1,23 @@
+{
+  "cpu": 16,
+  "units": {
+    "docker.service": {
+      "allowed": "",
+      "active": "active",
+      "effective": "0-511",
+      "kernelCpus": ""
+    },
+    "containerd.service": {
+      "allowed": "",
+      "active": "active",
+      "effective": "0-511",
+      "kernelCpus": ""
+    },
+    "dlbench.slice": {
+      "allowed": "",
+      "active": "inactive",
+      "effective": "",
+      "kernelCpus": ""
+    }
+  }
+}

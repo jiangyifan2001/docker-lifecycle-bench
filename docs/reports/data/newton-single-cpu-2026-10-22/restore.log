@@ -1,0 +1,3 @@
+Compatibility fallback: /sys/fs/cgroup/system.slice/containerd.service/cpuset.cpus explicitly retains 0-511; empty/inherited cpuset requires a later service restart on this kernel.
+Compatibility fallback: /sys/fs/cgroup/system.slice/docker.service/cpuset.cpus explicitly retains 0-511; empty/inherited cpuset requires a later service restart on this kernel.
+Restored original CPU restrictions. Recovery state retained at /home/higon/yifan/docker-lifecycle-bench/dist/newton-single-cpu-20261022/host-state.json

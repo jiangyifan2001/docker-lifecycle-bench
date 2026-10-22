@@ -1,0 +1,31 @@
+=== RUN   TestPinHarnessInChild
+--- PASS: TestPinHarnessInChild (0.02s)
+=== RUN   TestRejectRemoteDocker
+--- PASS: TestRejectRemoteDocker (0.00s)
+=== RUN   TestSnapshotAndCanary
+--- PASS: TestSnapshotAndCanary (0.00s)
+=== RUN   TestSnapshotFailsClosed
+=== RUN   TestSnapshotFailsClosed/daemon-unpinned
+=== RUN   TestSnapshotFailsClosed/runtime-unpinned
+=== RUN   TestSnapshotFailsClosed/wrong-slice
+=== RUN   TestSnapshotFailsClosed/empty-mask
+=== RUN   TestSnapshotFailsClosed/extra-harness-thread
+=== RUN   TestSnapshotFailsClosed/extra-daemon-thread
+=== RUN   TestSnapshotFailsClosed/v1-cgroup
+=== RUN   TestSnapshotFailsClosed/missing-containerd
+--- PASS: TestSnapshotFailsClosed (0.01s)
+    --- PASS: TestSnapshotFailsClosed/daemon-unpinned (0.00s)
+    --- PASS: TestSnapshotFailsClosed/runtime-unpinned (0.00s)
+    --- PASS: TestSnapshotFailsClosed/wrong-slice (0.00s)
+    --- PASS: TestSnapshotFailsClosed/empty-mask (0.00s)
+    --- PASS: TestSnapshotFailsClosed/extra-harness-thread (0.00s)
+    --- PASS: TestSnapshotFailsClosed/extra-daemon-thread (0.00s)
+    --- PASS: TestSnapshotFailsClosed/v1-cgroup (0.00s)
+    --- PASS: TestSnapshotFailsClosed/missing-containerd (0.00s)
+=== RUN   TestCanaryRejectsWrongScopeAndUnpinnedShim
+--- PASS: TestCanaryRejectsWrongScopeAndUnpinnedShim (0.00s)
+=== RUN   TestStableRejectsRestart
+--- PASS: TestStableRejectsRestart (0.00s)
+=== RUN   TestSingleCPUListsAndCgroupPaths
+--- PASS: TestSingleCPUListsAndCgroupPaths (0.00s)
+PASS

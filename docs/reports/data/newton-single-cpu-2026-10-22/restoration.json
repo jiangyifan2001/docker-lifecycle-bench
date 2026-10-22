@@ -1,0 +1,53 @@
+{
+  "passed": true,
+  "originalContainersPreserved": 25,
+  "runningContainers": 0,
+  "daemonPIDsUnchanged": true,
+  "services": [
+    {
+      "unit": "docker.service",
+      "properties": {
+        "MainPID": "15481",
+        "ControlGroup": "/system.slice/docker.service",
+        "EffectiveCPUs": "0-511",
+        "AllowedCPUs": "",
+        "Id": "docker.service",
+        "ActiveState": "active"
+      },
+      "threadMasks": {
+        "0-511": 64
+      },
+      "kernelCpuMask": "0-511",
+      "originalKernelCpuMask": ""
+    },
+    {
+      "unit": "containerd.service",
+      "properties": {
+        "MainPID": "15432",
+        "ControlGroup": "/system.slice/containerd.service",
+        "EffectiveCPUs": "0-511",
+        "AllowedCPUs": "",
+        "Id": "containerd.service",
+        "ActiveState": "active"
+      },
+      "threadMasks": {
+        "0-511": 35
+      },
+      "kernelCpuMask": "0-511",
+      "originalKernelCpuMask": ""
+    },
+    {
+      "unit": "dlbench.slice",
+      "properties": {
+        "ControlGroup": "",
+        "EffectiveCPUs": "",
+        "AllowedCPUs": "",
+        "Id": "dlbench.slice",
+        "ActiveState": "inactive"
+      },
+      "threadMasks": {},
+      "kernelCpuMask": "",
+      "originalKernelCpuMask": ""
+    }
+  ]
+}

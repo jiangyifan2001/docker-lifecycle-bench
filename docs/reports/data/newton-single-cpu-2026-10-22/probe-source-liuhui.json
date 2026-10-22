@@ -1,0 +1,35 @@
+[
+    {
+        "Id": "sha256:36810f1cb22b0d86c5200c1a871551c7e8aedf054d50db1cf7a4f5ed07c66c4f",
+        "RepoTags": [
+            "dlbench-probe:smoke"
+        ],
+        "RepoDigests": [
+            "dlbench-probe@sha256:36810f1cb22b0d86c5200c1a871551c7e8aedf054d50db1cf7a4f5ed07c66c4f"
+        ],
+        "Comment": "Imported from -",
+        "Created": "2026-10-16T04:54:34.217847907Z",
+        "Config": {
+            "Entrypoint": [
+                "/dlbench-probe"
+            ]
+        },
+        "Architecture": "amd64",
+        "Os": "linux",
+        "Size": 354006,
+        "RootFS": {
+            "Type": "layers",
+            "Layers": [
+                "sha256:d4b391a127c9935bddcfee8f6fbaae6e355bcf67010ad477cec0b4e7b81be007"
+            ]
+        },
+        "Metadata": {
+            "LastTagTime": "2026-10-16T04:54:34.227896032Z"
+        },
+        "Descriptor": {
+            "mediaType": "application/vnd.oci.image.manifest.v1+json",
+            "digest": "sha256:36810f1cb22b0d86c5200c1a871551c7e8aedf054d50db1cf7a4f5ed07c66c4f",
+            "size": 404
+        }
+    }
+]

@@ -1,0 +1,1 @@
+Prepared logical CPU 16; no daemon restart. Restore with --state /home/higon/yifan/docker-lifecycle-bench/dist/newton-single-cpu-20261022/host-state.json

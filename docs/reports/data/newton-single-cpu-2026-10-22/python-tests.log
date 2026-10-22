@@ -1,0 +1,12 @@
+test_command_keeps_go_binary_as_single_timing_engine (test_client.DlbenchClientTest) ... ok
+test_invalid_cpu_never_runs (test_client.DlbenchClientTest) ... ok
+test_single_cpu_zero_is_forwarded (test_client.DlbenchClientTest) ... ok
+test_explicit_original_mask_is_preserved (test_host_preparation.RecoveryTest) ... ok
+test_old_kernel_restores_original_budget (test_host_preparation.RecoveryTest) ... ok
+test_other_errors_are_not_silenced (test_host_preparation.RecoveryTest) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.003s
+
+OK
+Compatibility fallback: <Mock id='139640212343152'> explicitly retains 0-191; empty/inherited cpuset requires a later service restart on this kernel.
