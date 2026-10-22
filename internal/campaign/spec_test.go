@@ -74,3 +74,25 @@ func writeSpec(t *testing.T, content string) string {
 	}
 	return path
 }
+
+func TestSingleCPUConfiguration(t *testing.T) {
+	spec, err := Load(writeSpec(t, "apiVersion: dlbench.io/v1alpha1\nkind: Campaign\nmetadata: {name: pin}\nimage: probe:test\nplacement: {singleCpu: 0}\ncontainer: {cpusetMems: '2'}\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if spec.Placement == nil || spec.Placement.SingleCPU != 0 || spec.Container.CPUSetCPUs != "0" || spec.Container.CgroupParent != SingleCPUSlice || spec.Container.CPUSetMems != "2" {
+		t.Fatalf("%+v", spec)
+	}
+	if err := spec.SetSingleCPU(1); err == nil {
+		t.Fatal("accepted conflicting CPU")
+	}
+	for _, container := range []Container{{CPUSetCPUs: "0-7"}, {CgroupParent: "system.slice"}} {
+		s := Spec{Container: container}
+		if err := s.SetSingleCPU(0); err == nil {
+			t.Fatal("accepted conflicting placement")
+		}
+	}
+	if err := (&Spec{}).SetSingleCPU(-1); err == nil {
+		t.Fatal("accepted negative CPU")
+	}
+}

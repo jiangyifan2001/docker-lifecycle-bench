@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -19,6 +20,7 @@ const (
 	APIVersion        = "dlbench.io/v1alpha1"
 	Kind              = "Campaign"
 	ScenarioFullCycle = "full-lifecycle"
+	SingleCPUSlice    = "dlbench.slice"
 )
 
 var campaignName = regexp.MustCompile(`^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$`)
@@ -50,9 +52,22 @@ type Metadata struct {
 }
 
 type Container struct {
-	NetworkMode string `yaml:"networkMode" json:"networkMode"`
-	CPUSetCPUs  string `yaml:"cpusetCpus" json:"cpusetCpus"`
-	CPUSetMems  string `yaml:"cpusetMems" json:"cpusetMems"`
+	NetworkMode  string `yaml:"networkMode" json:"networkMode"`
+	CPUSetCPUs   string `yaml:"cpusetCpus" json:"cpusetCpus"`
+	CPUSetMems   string `yaml:"cpusetMems" json:"cpusetMems"`
+	CgroupParent string `yaml:"cgroupParent,omitempty" json:"cgroupParent,omitempty"`
+}
+
+// A pointer on Spec distinguishes CPU 0 from no pinning.
+type Placement struct {
+	SingleCPU int `yaml:"singleCpu" json:"singleCpu"`
+}
+
+func (p *Placement) UnmarshalYAML(value *yaml.Node) error {
+	if value.Kind != yaml.MappingNode || len(value.Content) != 2 || value.Content[0].Value != "singleCpu" {
+		return errors.New("placement must contain exactly one field: singleCpu")
+	}
+	return value.Content[1].Decode(&p.SingleCPU)
 }
 
 type Warmup struct {
@@ -80,6 +95,7 @@ type Spec struct {
 	Image          string      `yaml:"image" json:"image"`
 	OutputDir      string      `yaml:"outputDir" json:"outputDir"`
 	Container      Container   `yaml:"container" json:"container"`
+	Placement      *Placement  `yaml:"placement,omitempty" json:"placement,omitempty"`
 	Warmup         Warmup      `yaml:"warmup" json:"warmup"`
 	Measurement    Measurement `yaml:"measurement" json:"measurement"`
 	Capacity       Capacity    `yaml:"capacity" json:"capacity"`
@@ -106,6 +122,11 @@ func Load(path string) (Spec, error) {
 	}
 
 	spec.applyDefaults()
+	if spec.Placement != nil {
+		if err := spec.SetSingleCPU(spec.Placement.SingleCPU); err != nil {
+			return Spec{}, err
+		}
+	}
 	if err := spec.Validate(); err != nil {
 		return Spec{}, err
 	}
@@ -147,6 +168,14 @@ func (s *Spec) applyDefaults() {
 
 func (s Spec) Validate() error {
 	var problems []string
+	if s.Placement != nil {
+		if s.Placement.SingleCPU < 0 {
+			problems = append(problems, "placement.singleCpu must be non-negative")
+		}
+		if s.Container.CPUSetCPUs != strconv.Itoa(s.Placement.SingleCPU) || s.Container.CgroupParent != SingleCPUSlice {
+			problems = append(problems, "single-CPU placement requires matching container.cpusetCpus and cgroupParent=dlbench.slice")
+		}
+	}
 	if s.APIVersion != APIVersion {
 		problems = append(problems, fmt.Sprintf("apiVersion must be %q", APIVersion))
 	}
@@ -221,4 +250,25 @@ func joinProblems(problems []string) string {
 
 func (s Spec) NormalizedJSON() ([]byte, error) {
 	return json.MarshalIndent(s, "", "  ")
+}
+
+// SetSingleCPU expands the shortcut before validation and recording. Conflicts
+// with explicit YAML placement are rejected, never silently overwritten.
+func (s *Spec) SetSingleCPU(cpu int) error {
+	if cpu < 0 {
+		return errors.New("single CPU must be a non-negative logical CPU ID")
+	}
+	if s.Placement != nil && s.Placement.SingleCPU != cpu {
+		return errors.New("--single-cpu conflicts with placement.singleCpu")
+	}
+	if cpus := s.Container.CPUSetCPUs; cpus != "" && cpus != strconv.Itoa(cpu) {
+		return errors.New("single CPU conflicts with container.cpusetCpus (use one CPU ID)")
+	}
+	if parent := s.Container.CgroupParent; parent != "" && parent != SingleCPUSlice {
+		return errors.New("single CPU requires container.cgroupParent=dlbench.slice")
+	}
+	s.Placement = &Placement{SingleCPU: cpu}
+	s.Container.CPUSetCPUs = strconv.Itoa(cpu)
+	s.Container.CgroupParent = SingleCPUSlice
+	return nil
 }

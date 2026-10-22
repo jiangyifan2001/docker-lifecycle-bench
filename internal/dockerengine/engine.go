@@ -42,6 +42,7 @@ type SystemInfo struct {
 	CPUs            int      `json:"cpus"`
 	MemoryBytes     int64    `json:"memoryBytes"`
 	SecurityOptions []string `json:"securityOptions"`
+	DefaultRuntime  string   `json:"defaultRuntime"`
 }
 
 func New(spec campaign.Spec) (*Engine, error) {
@@ -76,6 +77,7 @@ func (e *Engine) SystemInfo(ctx context.Context) (SystemInfo, error) {
 		CPUs:            info.NCPU,
 		MemoryBytes:     info.MemTotal,
 		SecurityOptions: info.SecurityOptions,
+		DefaultRuntime:  info.DefaultRuntime,
 	}, nil
 }
 
@@ -110,24 +112,7 @@ func (e *Engine) Cycle(ctx context.Context, request model.Request) (operation mo
 		return fail(operation, "clock", err)
 	}
 
-	config := &containertypes.Config{
-		Image:        e.spec.Image,
-		AttachStdout: true,
-		AttachStderr: true,
-		Labels: map[string]string{
-			managedLabel: "true",
-			runIDLabel:   request.RunID,
-			sampleLabel:  fmt.Sprint(request.SampleID),
-		},
-	}
-	hostConfig := &containertypes.HostConfig{
-		NetworkMode: containertypes.NetworkMode(e.spec.Container.NetworkMode),
-		LogConfig:   containertypes.LogConfig{Type: "none"},
-		Resources: containertypes.Resources{
-			CpusetCpus: e.spec.Container.CPUSetCPUs,
-			CpusetMems: e.spec.Container.CPUSetMems,
-		},
-	}
+	config, hostConfig := e.containerConfig(request)
 
 	createStart, err := e.clock.NowNS()
 	if err != nil {
@@ -283,4 +268,59 @@ func containerName(request model.Request) string {
 		runID = runID[:40]
 	}
 	return fmt.Sprintf("dlbench-%s-%d", runID, request.SampleID)
+}
+
+func (e *Engine) DockerHost() string { return e.client.DaemonHost() }
+
+// Shared by measured cycles and the untimed placement canary.
+func (e *Engine) containerConfig(request model.Request) (*containertypes.Config, *containertypes.HostConfig) {
+	config := &containertypes.Config{
+		Image: e.spec.Image, AttachStdout: true, AttachStderr: true,
+		Labels: map[string]string{managedLabel: "true", runIDLabel: request.RunID, sampleLabel: fmt.Sprint(request.SampleID)},
+	}
+	hostConfig := &containertypes.HostConfig{
+		NetworkMode: containertypes.NetworkMode(e.spec.Container.NetworkMode),
+		LogConfig:   containertypes.LogConfig{Type: "none"},
+		Resources: containertypes.Resources{
+			CpusetCpus: e.spec.Container.CPUSetCPUs, CpusetMems: e.spec.Container.CPUSetMems,
+			CgroupParent: e.spec.Container.CgroupParent,
+		},
+	}
+	if e.spec.Placement != nil {
+		hostConfig.Runtime = "runc"
+	}
+	return config, hostConfig
+}
+
+// PlacementCanary is outside all sample/throughput windows. It only manages a
+// run-owned container, and always attempts cleanup even after cancellation.
+func (e *Engine) PlacementCanary(ctx context.Context, runID string, verify func(int, string) error) (err error) {
+	request := model.Request{RunID: runID, SampleID: 0}
+	config, hostConfig := e.containerConfig(request)
+	created, err := e.client.ContainerCreate(ctx, client.ContainerCreateOptions{Config: config, HostConfig: hostConfig, Name: containerName(request)})
+	if err != nil {
+		return fmt.Errorf("create placement canary: %w", err)
+	}
+	defer func() {
+		cleanup, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
+		if cleanupErr := e.removeOwned(cleanup, created.ID, runID); cleanupErr != nil {
+			err = fmt.Errorf("placement canary cleanup failed: %v (qualification error: %v)", cleanupErr, err)
+		}
+	}()
+	if _, err := e.client.ContainerStart(ctx, created.ID, client.ContainerStartOptions{}); err != nil {
+		return err
+	}
+	inspection, err := e.client.ContainerInspect(ctx, created.ID, client.ContainerInspectOptions{})
+	if err != nil {
+		return err
+	}
+	c := inspection.Container
+	if c.State == nil || !c.State.Running || c.State.Pid <= 0 {
+		return fmt.Errorf("placement canary is not running with an inspectable host PID")
+	}
+	if c.HostConfig == nil || c.HostConfig.CpusetCpus != e.spec.Container.CPUSetCPUs || c.HostConfig.CgroupParent != e.spec.Container.CgroupParent || c.HostConfig.Runtime != "runc" {
+		return fmt.Errorf("placement canary configuration does not match single-CPU profile")
+	}
+	return verify(c.State.Pid, created.ID)
 }

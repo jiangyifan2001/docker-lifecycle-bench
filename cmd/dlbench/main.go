@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	"docker-lifecycle-bench/internal/campaign"
 	"docker-lifecycle-bench/internal/dockerengine"
 	"docker-lifecycle-bench/internal/doctor"
+	"docker-lifecycle-bench/internal/placement"
 	"docker-lifecycle-bench/internal/runner"
 	"docker-lifecycle-bench/internal/summary"
 )
@@ -77,6 +79,7 @@ func validateCommand(args []string) int {
 	flags := flag.NewFlagSet("validate", flag.ContinueOnError)
 	flags.SetOutput(os.Stderr)
 	specPath := flags.String("spec", "", "campaign YAML path")
+	flags.Int("single-cpu", -1, "expand the single-logical-CPU diagnostic profile (no host changes)")
 	if err := flags.Parse(args); err != nil {
 		return exitInvalidSpec
 	}
@@ -85,6 +88,9 @@ func validateCommand(args []string) int {
 		return exitInvalidSpec
 	}
 	spec, err := campaign.Load(*specPath)
+	if err == nil {
+		err = applyCPUFlag(flags, &spec)
+	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return exitInvalidSpec
@@ -124,6 +130,7 @@ func runCommand(args []string) int {
 	flags := flag.NewFlagSet("run", flag.ContinueOnError)
 	flags.SetOutput(os.Stderr)
 	specPath := flags.String("spec", "", "campaign YAML path")
+	flags.Int("single-cpu", -1, "pin harness and require the prepared Docker/runtime stack on this logical CPU")
 	if err := flags.Parse(args); err != nil {
 		return exitInvalidSpec
 	}
@@ -132,11 +139,20 @@ func runCommand(args []string) int {
 		return exitInvalidSpec
 	}
 	spec, err := campaign.Load(*specPath)
+	if err == nil {
+		err = applyCPUFlag(flags, &spec)
+	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return exitInvalidSpec
 	}
 
+	// Pin before opening any files or sockets: on Linux this may exec a fresh
+	// copy of this binary so ALL Go runtime threads inherit the affinity mask.
+	var pinErr error
+	if spec.Placement != nil {
+		pinErr = placement.PinHarness(spec.Placement.SingleCPU)
+	}
 	result, runID, err := bundle.Create(spec.OutputDir, spec.Metadata.Name, time.Now())
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -161,13 +177,18 @@ func runCommand(args []string) int {
 		return finalizeFailure(result, runID, "RUN_FAILED", err, exitRunFailed)
 	}
 
+	if pinErr != nil {
+		return finalizeFailure(result, runID, "BLOCKED", pinErr, exitBlocked)
+	}
+	runContext, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 	engine, err := dockerengine.New(spec)
 	if err != nil {
 		return finalizeFailure(result, runID, "BLOCKED", err, exitBlocked)
 	}
 	defer engine.Close()
 
-	doctorContext, doctorCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	doctorContext, doctorCancel := context.WithTimeout(runContext, 30*time.Second)
 	report := doctor.Collect(doctorContext, engine)
 	doctorCancel()
 	if err := result.WriteJSON("environment.json", report); err != nil {
@@ -177,17 +198,43 @@ func runCommand(args []string) int {
 		return finalizeFailure(result, runID, "BLOCKED", errors.New("required environment checks failed"), exitBlocked)
 	}
 
-	imageContext, imageCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	imageContext, imageCancel := context.WithTimeout(runContext, 30*time.Second)
 	err = engine.ValidateImage(imageContext)
 	imageCancel()
 	if err != nil {
 		return finalizeFailure(result, runID, "BLOCKED", err, exitBlocked)
 	}
 
-	runContext, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
+	var placementBefore placement.Snapshot
+	if spec.Placement != nil {
+		qualificationContext, cancel := context.WithTimeout(runContext, 30*time.Second)
+		evidence, qualificationErr := qualifyPlacement(qualificationContext, spec, runID, engine, report.Docker)
+		cancel()
+		placementBefore = evidence.Before
+		if err := result.WriteJSON("placement.before.json", evidence); err != nil {
+			return finalizeFailure(result, runID, "RUN_FAILED", err, exitRunFailed)
+		}
+		if qualificationErr != nil {
+			return finalizeFailure(result, runID, "BLOCKED", qualificationErr, exitBlocked)
+		}
+	}
 	benchmark := runner.Runner{Spec: spec, RunID: runID, Executor: engine, Writer: result}
 	operations, runErr := benchmark.Run(runContext)
+	if spec.Placement != nil {
+		checkContext, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		after := placement.CheckHost(checkContext, spec.Placement.SingleCPU, engine.DockerHost())
+		cancel()
+		if err := placement.VerifyStable(placementBefore, after); err != nil {
+			after.Passed = false
+			after.Error = err.Error()
+		}
+		if !after.Passed {
+			runErr = errors.Join(runErr, fmt.Errorf("post-run placement check: %s", after.Error))
+		}
+		if err := result.WriteJSON("placement.after.json", after); err != nil {
+			runErr = errors.Join(runErr, err)
+		}
+	}
 	derivedSummary := summary.Build(operations)
 	status := "SUCCESS"
 	exitCode := exitOK
@@ -229,4 +276,44 @@ func printJSON(value any) {
 	if err := encoder.Encode(value); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 	}
+}
+
+func applyCPUFlag(flags *flag.FlagSet, spec *campaign.Spec) (err error) {
+	if flags.NArg() != 0 {
+		return fmt.Errorf("unexpected positional arguments: %v", flags.Args())
+	}
+	flags.Visit(func(f *flag.Flag) {
+		if f.Name == "single-cpu" {
+			cpu, parseErr := strconv.Atoi(f.Value.String())
+			if parseErr != nil {
+				err = parseErr
+				return
+			}
+			err = spec.SetSingleCPU(cpu)
+		}
+	})
+	return err
+}
+
+func qualifyPlacement(ctx context.Context, spec campaign.Spec, runID string, engine *dockerengine.Engine, info dockerengine.SystemInfo) (placement.Evidence, error) {
+	cpu := spec.Placement.SingleCPU
+	evidence := placement.Evidence{Profile: "single-logical-cpu-diagnostic", CPU: cpu, GOMAXPROCS: runtime.GOMAXPROCS(0)}
+	if info.CgroupVersion != "2" || info.CgroupDriver != "systemd" || info.DefaultRuntime != "runc" {
+		err := errors.New("single-CPU mode requires cgroup v2, systemd cgroup driver, and default runc runtime")
+		evidence.Before = placement.Snapshot{CPU: cpu, CollectedAt: time.Now().UTC(), Error: err.Error()}
+		return evidence, err
+	}
+	evidence.Before = placement.CheckHost(ctx, cpu, engine.DockerHost())
+	if !evidence.Before.Passed {
+		return evidence, errors.New(evidence.Before.Error)
+	}
+	err := engine.PlacementCanary(ctx, runID, func(pid int, id string) error {
+		var err error
+		evidence.Canary, err = placement.VerifyCanary(cpu, pid, id)
+		return err
+	})
+	if err != nil {
+		evidence.CanaryError = err.Error()
+	}
+	return evidence, err
 }

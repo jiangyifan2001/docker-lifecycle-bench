@@ -20,11 +20,15 @@ class DlbenchClient:
         spec: str | os.PathLike[str],
         *,
         env: Mapping[str, str] | None = None,
+        single_cpu: int | None = None,
     ) -> subprocess.CompletedProcess[str]:
         command = self.command(["run", "--spec", os.fspath(Path(spec))])
+        if single_cpu is not None:
+            if isinstance(single_cpu, bool) or not isinstance(single_cpu, int) or single_cpu < 0:
+                raise ValueError("single_cpu must be a non-negative logical CPU ID")
+            command.extend(["--single-cpu", str(single_cpu)])
         return subprocess.run(command, check=False, text=True, env=env)
 
     def validate(self, spec: str | os.PathLike[str]) -> subprocess.CompletedProcess[str]:
         command = self.command(["validate", "--spec", os.fspath(Path(spec))])
         return subprocess.run(command, check=False, text=True)
-

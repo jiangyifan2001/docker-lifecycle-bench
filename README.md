@@ -140,6 +140,18 @@ required failure blocks the run instead of silently weakening the experiment.
 The example campaign leaves `cpusetCpus` and `cpusetMems` empty. It is therefore
 a topology-recorded smoke test, not a Local-NUMA headline result.
 
+For a single-logical-CPU diagnostic, explicitly prepare the host first, then use:
+
+```sh
+./bin/dlbench run --spec examples/hygon-7490h-smoke.yaml --single-cpu 16
+```
+
+Serial and concurrent workers share the selected CPU, together with the checked
+Docker/runtime stack and probe. Unprepared placement is blocked. CPU 16 is only
+an example; this is not an exclusive-core or NUMA-memory policy. Follow
+[`docs/single-cpu.md`](docs/single-cpu.md) for administrator preparation, recovery,
+scope, and evidence. The benchmark itself never changes daemon settings.
+
 ## Campaign configuration
 
 Campaigns use the versioned `dlbench.io/v1alpha1` YAML interface. The Phase 0
@@ -170,6 +182,9 @@ summary.json              Derived latency and capacity statistics
 status.json               SUCCESS, BLOCKED, RUN_FAILED, or INTERRUPTED
 checksums.sha256           Bundle integrity checksums
 ```
+
+Single-CPU runs also preserve `placement.before.json` (including the untimed
+canary) and `placement.after.json` when those qualification stages are reached.
 
 Preserve the whole directory. `summary.json` is derived data and does not
 replace `operations.ndjson` or the environment evidence.

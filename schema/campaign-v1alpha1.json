@@ -29,8 +29,15 @@
       "properties": {
         "networkMode": {"const": "none"},
         "cpusetCpus": {"type": "string"},
-        "cpusetMems": {"type": "string"}
+        "cpusetMems": {"type": "string"},
+        "cgroupParent": {"type": "string"}
       }
+    },
+    "placement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["singleCpu"],
+      "properties": {"singleCpu": {"type": "integer", "minimum": 0}}
     },
     "warmup": {
       "type": "object",
